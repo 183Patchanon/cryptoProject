@@ -4,11 +4,12 @@ import java.io.IOException;
 public class GeneratePrime {
     private checkPrime prime;
     private long nBit = 0;
+    private Mod mod = new Mod();
 
     public long GenPrime(long n, String Filename) {
         long number = 0;
-        long minRangeValue = (long) Math.pow(2, n - 1);
-        long maxRangeValue = (long) Math.pow(2, n) - 1;
+        long minRangeValue = (long) mod.FastExpo(2, n - 1, 0);
+        long maxRangeValue = (long) mod.FastExpo(2, n, 0) - 1;
         nBit = n;
 
         // Validate the input n before proceeding
