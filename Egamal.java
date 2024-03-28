@@ -2,6 +2,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 public class Egamal {
@@ -13,6 +15,23 @@ public class Egamal {
     private findGCD gcd = new findGCD();
     private checkPrime primeCheck = new checkPrime();
     private SecureRandom secureRandom = new SecureRandom();
+
+    public Egamal() {
+
+    }
+
+    // Decrypt
+    public Egamal(BigInteger u, BigInteger p) {
+        this.u = u;
+        this.p = p;
+    }
+
+    // Verify
+    public Egamal(BigInteger g, BigInteger y, BigInteger p) {
+        this.g = g;
+        this.y = y;
+        this.p = p;
+    }
 
     public BigInteger GenGenerator(BigInteger p) {
         BigInteger g = new BigInteger(p.bitLength(), secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.TWO); // 2 - (p-2)
@@ -114,6 +133,70 @@ public class Egamal {
             }
         }
     }
+
+    private byte[] RWHash(byte[] messageBytes) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        return digest.digest(messageBytes);
+    }
+
+    public void ElgamalSignature(String inputFilePath, String outputFilePath) throws IOException, NoSuchAlgorithmException {
+        try (FileInputStream fileInputStream = new FileInputStream(inputFilePath);
+            FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath)) {
+            
+            byte[] messageBytes = fileInputStream.readAllBytes();
+            fileInputStream.close();
+
+            BigInteger hashOfMessage = new BigInteger(RWHash(messageBytes));
+            
+            BigInteger k = new BigInteger(p.bitLength() - 2, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.TWO);
+            while (!gcd.GCD(k, p.subtract(BigInteger.ONE)).equals(BigInteger.ONE)) {
+                k = new BigInteger(p.bitLength() - 2, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.TWO);
+            }
+        
+            BigInteger a = mod.FastExpo(g, k, p);
+            BigInteger kInverse = gcd.findInverse(k, p.subtract(BigInteger.ONE));
+            BigInteger b = kInverse.multiply(hashOfMessage.subtract(u.multiply(a))).mod(p.subtract(BigInteger.ONE));
+        
+            // Convert signature to byte array and write to the file
+            byte[] aBytes = a.toByteArray();
+            byte[] bBytes = b.toByteArray();
+
+            // Write signature length and signature itself
+            fileOutputStream.write(aBytes.length);
+            fileOutputStream.write(aBytes);
+            fileOutputStream.write(bBytes.length);
+            fileOutputStream.write(bBytes);
+            fileOutputStream.close();
+        }
+    }
+
+    public boolean ElgamalVerification(String messageFilePath, String signatureFilePath) throws IOException, NoSuchAlgorithmException {
+        try (FileInputStream messageInputStream = new FileInputStream(messageFilePath);
+        FileInputStream signatureInputStream = new FileInputStream(signatureFilePath)) {
+       
+            // Read the message from file and compute its hash
+            byte[] messageBytes = messageInputStream.readAllBytes();
+            BigInteger hashOfMessage = new BigInteger(RWHash(messageBytes));
+            
+            // Read the signature from the file
+            int aLength = signatureInputStream.read();
+            byte[] aBytes = new byte[aLength];
+            signatureInputStream.read(aBytes);
+            BigInteger a = new BigInteger(aBytes);
+            
+            int bLength = signatureInputStream.read();
+            byte[] bBytes = new byte[bLength];
+            signatureInputStream.read(bBytes);
+            BigInteger b = new BigInteger(bBytes);
+            
+            // Verify the signature
+            BigInteger leftSide = mod.FastExpo(g, hashOfMessage, p);
+            BigInteger rightSide = mod.FastExpo(y, a, p).multiply(mod.FastExpo(a, b, p)).mod(p);
+            
+            System.out.println(leftSide +" " +rightSide);
+            return leftSide.equals(rightSide);
+        }
+    }       
 
     public String toString() {
         return "u: " +u +", p: " +p +", g: " +g +", y: " +y;
