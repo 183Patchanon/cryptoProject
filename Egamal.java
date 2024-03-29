@@ -1,8 +1,8 @@
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
@@ -54,24 +54,30 @@ public class Egamal {
         return true;
     }
 
-    public void ElgamalKeyGen(BigInteger p) {
-        this.p = p;
-        // Ensure p is a prime number suitable for cryptography
-        if (!primeCheck.isPrime(p)) {
-            throw new IllegalArgumentException("p must be a prime number.");
+    public void ElgamalKeyGen(BigInteger p) throws IOException {
+        try (PrintWriter printWriter = new PrintWriter("ElgamalKey.txt")) {
+            this.p = p;
+            // Ensure p is a prime number suitable for cryptography
+            if (!primeCheck.isPrime(p)) {
+                throw new IllegalArgumentException("p must be a prime number.");
+            }
+
+            // Generate g, a generator for Z_p*
+            this.g = GenGenerator(p);
+
+            // Select a random private key u from [1, p-2]
+            this.u = new BigInteger(p.bitLength() - 1, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.ONE);
+
+
+            // Compute y = g^u mod p
+            this.y = mod.FastExpo(g, u, p);
+
+            // Write u, p, g, y to the file as numbers
+            printWriter.println("u: " + u.toString() +" ");
+            printWriter.println("p: " + p.toString() +" ");
+            printWriter.println("g: " + g.toString() +" ");
+            printWriter.println("y: " + y.toString() +" ");
         }
-
-        // Generate g, a generator for Z_p*
-        this.g = GenGenerator(p);
-
-        // Select a random private key u from [1, p-2]
-        this.u = new BigInteger(p.bitLength() - 1, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.ONE);
-
-
-        // Compute y = g^u mod p
-        this.y = mod.FastExpo(g, u, p);
-
-        // Return the private key (x) and the public key (p, g, y)
     }
 
     public void ElgamalEncrypt(String inputFilePath, String outputFilePath) throws IOException {
@@ -134,9 +140,60 @@ public class Egamal {
         }
     }
 
-    private byte[] RWHash(byte[] messageBytes) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        return digest.digest(messageBytes);
+    public byte[] RWHash(byte[] message) throws NoSuchAlgorithmException {
+        // s= output size = log2(p)
+        int outputSize = (int) (Math.log(p.doubleValue()) / Math.log(2));
+
+        // Compression block size: 5 * s
+        int compressionBlockSize = 5 * outputSize;
+
+        // Convert message bytes to binary string
+        StringBuilder paddedMessage = new StringBuilder();
+        for (byte b : message) {
+            paddedMessage.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+        }
+
+        // first previous hash value = message.length
+        BigInteger previousHash = BigInteger.valueOf(message.length).mod(p);
+
+        // do H0 - H4
+        // BigInteger startIndex = BigInteger.ZERO;
+        int startIndex = 0;
+        for (int i = 0; i < 5; i++) {
+
+            // Split the block into 5 chunks
+            String[] chunks = new String[5];
+            for (int j = 0; j < 5; j++) {
+                if (startIndex + outputSize <= paddedMessage.length()) {
+                    chunks[j] = paddedMessage.substring(startIndex, startIndex + outputSize);
+                    startIndex += outputSize;
+                }
+                else {
+                    //Padding with 1
+                    while (paddedMessage.length() < (startIndex + outputSize)) {
+                        paddedMessage.append("1");
+                    }
+                    chunks[j] = paddedMessage.substring(startIndex, startIndex + outputSize);
+                    startIndex += outputSize;
+                }
+                System.out.println("chunk" +i +" " +j +": " +chunks[j]);
+            }
+
+            // Compute sumCi
+            BigInteger sumCi = BigInteger.ZERO;
+            for (int j = 0; j < 5; j++) {
+                if (chunks[j] != null) {
+                    BigInteger chunkValue = new BigInteger(chunks[j], 2); // result in binary
+                    sumCi = sumCi.add(chunkValue.pow(j + 1)); // ^1, 2, 3, 4, 5
+                }
+            }
+            System.out.println("sumCi " +sumCi);
+            BigInteger hashValue = previousHash.add(sumCi).shiftRight(16).mod(p);
+
+            previousHash = hashValue;
+        }
+        byte[] hashBytes = previousHash.toByteArray();
+        return hashBytes;
     }
 
     public void ElgamalSignature(String inputFilePath, String outputFilePath) throws IOException, NoSuchAlgorithmException {
