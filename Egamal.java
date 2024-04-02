@@ -34,10 +34,10 @@ public class Egamal {
     }
 
     public BigInteger GenGenerator(BigInteger p) {
-        BigInteger g = new BigInteger(p.bitLength(), secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.TWO); // 2 - (p-2)
+        BigInteger g = new BigInteger(p.bitLength() - 1, secureRandom).mod(p.subtract(BigInteger.ONE)).add(BigInteger.ONE); // [1, p-1]
 
         while (!CheckGenerator(g, p)) {
-            g = new BigInteger(p.bitLength(), secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.TWO);
+            g = new BigInteger(p.bitLength() - 1, secureRandom).mod(p.subtract(BigInteger.ONE)).add(BigInteger.ONE);
         }
         return g;
     }
@@ -55,7 +55,8 @@ public class Egamal {
     }
 
     public void ElgamalKeyGen(BigInteger p) throws IOException {
-        try (PrintWriter printWriter = new PrintWriter("ElgamalKey.txt")) {
+        try (PrintWriter printWriterPK = new PrintWriter("ElgamalPublicKey.txt"); 
+            PrintWriter printWriterSK = new PrintWriter("ElgamalSecretKey.txt")) {
             this.p = p;
             // Ensure p is a prime number suitable for cryptography
             if (!primeCheck.isPrime(p)) {
@@ -65,18 +66,17 @@ public class Egamal {
             // Generate g, a generator for Z_p*
             this.g = GenGenerator(p);
 
-            // Select a random private key u from [1, p-2]
-            this.u = new BigInteger(p.bitLength() - 1, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.ONE);
-
+            // Select a random private key u from [1, p-1]
+            this.u = new BigInteger(p.bitLength() - 1, secureRandom).mod(p.subtract(BigInteger.ONE)).add(BigInteger.ONE); // [1, p-1]
 
             // Compute y = g^u mod p
             this.y = mod.FastExpo(g, u, p);
 
             // Write u, p, g, y to the file as numbers
-            printWriter.println("u: " + u.toString() +" ");
-            printWriter.println("p: " + p.toString() +" ");
-            printWriter.println("g: " + g.toString() +" ");
-            printWriter.println("y: " + y.toString() +" ");
+            printWriterSK.println("u: " + u.toString() +" ");
+            printWriterPK.println("p: " + p.toString() +" ");
+            printWriterPK.println("g: " + g.toString() +" ");
+            printWriterPK.println("y: " + y.toString() +" ");
         }
     }
 
@@ -86,10 +86,12 @@ public class Egamal {
             int character;
             while ((character = fileInputStream.read()) != -1) {
 
-                // Loop to find a 1 < k < p-1 such that gcd(k, p-1) = 1 for each block.
-                BigInteger k = new BigInteger(p.bitLength() - 2, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.TWO);
-                while (k.compareTo(p.subtract(BigInteger.ONE)) >= 0 || k.gcd(p.subtract(BigInteger.ONE)).compareTo(BigInteger.ONE) != 0) {
-                    k = new BigInteger(p.bitLength() - 2, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.TWO);
+                // Loop to find a 1 <= k < p-1 such that gcd(k, p-1) = 1 for each block.
+                BigInteger k = new BigInteger(p.bitLength() - 1, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.ONE);
+                
+                // while( k >= p-1 || gcd(k, p-1) != 1)
+                while (k.compareTo(p.subtract(BigInteger.ONE)) >= 0 || !gcd.GCD(k, p.subtract(BigInteger.ONE)).equals(BigInteger.ONE)) { 
+                    k = new BigInteger(p.bitLength() - 1, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.ONE);
                 }
 
                 // a = g^k mod p
@@ -141,7 +143,7 @@ public class Egamal {
     }
 
     public byte[] RWHash(byte[] message) throws NoSuchAlgorithmException {
-        // s= output size = log2(p)
+        // s = output size = log2(p)
         int outputSize = (int) (Math.log(p.doubleValue()) / Math.log(2));
 
         // Compression block size: 5 * s
@@ -169,7 +171,7 @@ public class Egamal {
                     startIndex += outputSize;
                 }
                 else {
-                    //Padding with 1
+                    // Padding with 1
                     while (paddedMessage.length() < (startIndex + outputSize)) {
                         paddedMessage.append("1");
                     }
@@ -219,6 +221,7 @@ public class Egamal {
             byte[] bBytes = b.toByteArray();
 
             // Write signature length and signature itself
+            fileOutputStream.write(messageBytes);
             fileOutputStream.write(aBytes.length);
             fileOutputStream.write(aBytes);
             fileOutputStream.write(bBytes.length);
