@@ -112,56 +112,6 @@ public class Egamal {
         }
     }
 
-
-    /* public void ElgamalEncrypt(String inputFilePath, String publicKeyPath) throws IOException {
-        ByteArrayOutputStream tempOutputStream = new ByteArrayOutputStream();
-        try (FileInputStream fileInputStream = new FileInputStream(inputFilePath);
-             BufferedReader br = new BufferedReader(new FileReader(publicKeyPath))) {
-            p = new BigInteger(br.readLine().split(": ")[1].trim());
-            g = new BigInteger(br.readLine().split(": ")[1].trim());
-            y = new BigInteger(br.readLine().split(": ")[1].trim());
-
-            int bytesRead;
-            int blockSize = (int) Math.ceil((double) (p.bitLength() - 1) / 8); // The block size is computed by dividing (p.bitLength() - 1) by 8 and rounding up
-            byte[] block = new byte[blockSize];
-            int totalPaddingBytes = 0;
-
-            while ((bytesRead = fileInputStream.read(block)) != -1) {
-                if (bytesRead < blockSize) {
-                    // Apply zero-padding for blocks smaller than blockSize
-                    byte[] paddedBlock = new byte[blockSize];
-                    System.arraycopy(block, 0, paddedBlock, 0, bytesRead);
-                    block = paddedBlock;
-                    totalPaddingBytes = blockSize - bytesRead; // Calculate padding size for the last block
-                }
-
-                // Encryption logic remains the same...
-                BigInteger k = new BigInteger(p.bitLength() - 1, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.ONE);
-                while (k.compareTo(p.subtract(BigInteger.ONE)) >= 0 || !gcd.GCD(k, p.subtract(BigInteger.ONE)).equals(BigInteger.ONE)) {
-                    k = new BigInteger(p.bitLength() - 1, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.ONE);
-                }
-                BigInteger a = mod.FastExpo(g, k, p); 
-                BigInteger b = mod.FastExpo(y, k, p).multiply(new BigInteger(1, block)).mod(p);
-
-                // byte[] aBytes = a.toByteArray();
-                // byte[] bBytes = b.toByteArray();
-                byte[] aBytes = adjustByteLength(a.toByteArray(), blockSize);
-                byte[] bBytes = adjustByteLength(b.toByteArray(), blockSize);
-                System.out.println(aBytes.length +" " +bBytes.length);
-                tempOutputStream.write(aBytes);
-                tempOutputStream.write(bBytes);
-            }
-
-            // Write padding size block at the beginning of the file
-            try (FileOutputStream fileOutputStream = new FileOutputStream("CipherText.txt")) {
-                byte[] paddingSizeBlock = BigInteger.valueOf(totalPaddingBytes).toByteArray();
-                paddingSizeBlock = adjustByteLength(paddingSizeBlock, blockSize);
-                fileOutputStream.write(paddingSizeBlock);
-                fileOutputStream.write(tempOutputStream.toByteArray());
-            }
-        }
-    } */
-
     /* public void ElgamalEncrypt(String inputFilePath, String publicKeyPath) throws IOException {
         try (FileInputStream fileInputStream = new FileInputStream(inputFilePath);
         FileOutputStream fileOutputStream = new FileOutputStream("CipherText.txt");
