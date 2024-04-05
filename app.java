@@ -1,8 +1,6 @@
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
 
@@ -72,24 +70,25 @@ public class app {
             }
             else if (mode == 5) {
                 System.out.println("****************Verification****************");
-                System.out.print("InputFile path: ");
-                String inputFilePath = sc.next();
+                System.out.print("SignedMessage path: ");
+                String signedMessagePath = sc.next();
                 sc.nextLine(); // newline character
                 System.out.print("PublicKey path: ");
-                String publicKeyPath = sc.next();
-                sc.nextLine(); // newline character
-                System.out.print("SignedMessage path: ");
-                String signedMessagePath = sc.nextLine();
-                System.out.println(egm.ElgamalVerification(inputFilePath, publicKeyPath, signedMessagePath));
+                String publicKeyPath = sc.nextLine();
+                System.out.println(egm.ElgamalVerification(signedMessagePath, publicKeyPath));
                 // System.out.println(egm.ElgamalVerification("ascii.txt","ElgamalPublicKey.txt"));
             }
             else if (mode == 6) {
                 System.out.println("*******************RWHash******************");
                 System.out.print("InputFile path: ");
                 String inputFilePath = sc.next();
+                sc.nextLine();
+                System.out.print("p path: ");
+                String pPath = sc.nextLine();
+
                 FileInputStream fs = new FileInputStream(inputFilePath);
                 byte[] inputRW = fs.readAllBytes();
-                System.out.println(egm.RWHash(inputRW));
+                System.out.println(egm.getRWHash(inputRW, pPath));
                 fs.close();
             }
         }

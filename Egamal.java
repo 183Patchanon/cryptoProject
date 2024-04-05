@@ -107,7 +107,8 @@ public class Egamal {
 
                 fileOutputStream.write(bBytes.length);
                 fileOutputStream.write(bBytes);
-                System.out.println(character +" " +a +" " +b);
+                System.out.println(aBytes.length +" " +bBytes.length);
+                // System.out.println(character +" " +a +" " +b);
             }
         }
     }
@@ -253,10 +254,19 @@ public class Egamal {
         }
     } */
 
-    public byte[] RWHash(byte[] message) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
+    public byte[] getRWHash(byte[] message, String pPath) throws FileNotFoundException, IOException, NoSuchAlgorithmException {
+        BufferedReader br = new BufferedReader(new FileReader(pPath));
+        p = new BigInteger(br.readLine().split(": ")[1].trim());
+        br.close();
+        byte[] hash = RWHash(message);
+        return hash;
+    }
+
+
+    private byte[] RWHash(byte[] message) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
         // p = new BigInteger("2147483783");
         // s = output size = log2(p)
-        System.out.println(p);
+        // System.out.println(p);
         int outputSize = (int) (Math.log(p.doubleValue()) / Math.log(2));
 
         // Compression block size: 5 * s
@@ -331,8 +341,8 @@ public class Egamal {
             p = new BigInteger(br.readLine().split(": ")[1].trim());
             g = new BigInteger(br.readLine().split(": ")[1].trim());
             y = new BigInteger(br.readLine().split(": ")[1].trim());
+            br.close();
             byte[] messageBytes = fileInputStream.readAllBytes();
-            fileInputStream.close();
             
             BigInteger hashOfMessage = new BigInteger(RWHash(messageBytes));
             
@@ -348,44 +358,46 @@ public class Egamal {
             // Convert signature to byte array and write to the file
             byte[] aBytes = a.toByteArray();
             byte[] bBytes = b.toByteArray();
+            String delimiter = "<<signedContent>>"; // Define a clear delimiter
+            byte[] delimiterBytes = delimiter.getBytes();
             
-            // Write signature length and signature itself
+            // Write message, delimiter, and signature to the file
             fileOutputStream.write(messageBytes);
+            fileOutputStream.write(delimiterBytes); // Write delimiter to separate message from signature
             fileOutputStream.write(aBytes);
             fileOutputStream.write(bBytes);
-            fileOutputStream.close();
         }
     }
 
-    public boolean ElgamalVerification(String messageFilePath, String publicKeyPath, String signedMessage) throws IOException, NoSuchAlgorithmException {
-        try (FileInputStream messageInputStream = new FileInputStream(messageFilePath);
-            FileInputStream signedInputStream = new FileInputStream(signedMessage)) {
-            // Read the entire file content
-            byte[] fileContent = messageInputStream.readAllBytes();
-            byte[] signedContent = signedInputStream.readAllBytes();
-    
+    public boolean ElgamalVerification(String signedMessage, String publicKeyPath) throws IOException, NoSuchAlgorithmException {
+        try (FileInputStream signedInputStream = new FileInputStream(signedMessage)) {
             // Read public key to get p, y
-            BufferedReader publicKeyReader = new BufferedReader(new FileReader(publicKeyPath));
-            p = new BigInteger(publicKeyReader.readLine().split(": ")[1].trim());
-            g = new BigInteger(publicKeyReader.readLine().split(": ")[1].trim()); // Unused in verification
-            y = new BigInteger(publicKeyReader.readLine().split(": ")[1].trim());
+            BufferedReader br = new BufferedReader(new FileReader(publicKeyPath));
+            p = new BigInteger(br.readLine().split(": ")[1].trim());
+            g = new BigInteger(br.readLine().split(": ")[1].trim()); 
+            y = new BigInteger(br.readLine().split(": ")[1].trim());
+            br.close();
+
+            byte[] signedContent = signedInputStream.readAllBytes();
+            // Convert the signedContent to a String to use the delimiter
+            String contentString = new String(signedContent);
+            String delimiter = "<<signedContent>>";
+            // Split the content using the delimiter to separate the message from the signature
+            String[] parts = contentString.split(delimiter, 2); // Limit to 2 parts, ensuring only the first occurrence is used
     
-            publicKeyReader.close();
+            if (parts.length < 2) {
+                // If there are not enough parts, the format is incorrect
+                return false;
+            }
     
-            // Assume the message is in the first part of the file and the signature is in the last part
-            // Find the end of the message part by searching for a delimiter or by other means
-            // For simplicity, let's assume we have the lengths of the message and signature
-            int messageLength = fileContent.length;
-            byte[] messageBytes = Arrays.copyOfRange(fileContent, 0, messageLength);
-    
-            // Assuming signature is at the end and we know its length
-            int signatureStart = messageLength;
-            byte[] signatureBytes = Arrays.copyOfRange(signedContent, signatureStart, signedContent.length);
+            byte[] messageBytes = parts[0].getBytes();
+            byte[] signatureBytes = parts[1].getBytes();
     
             // Hash the message
             BigInteger hashOfMessage = new BigInteger(RWHash(messageBytes));
     
-            // Extract a and b from signature
+            // Assuming the format of the signature is known and consistent
+            // Extract a and b from the signature
             BigInteger a = new BigInteger(1, Arrays.copyOfRange(signatureBytes, 0, signatureBytes.length / 2));
             BigInteger b = new BigInteger(1, Arrays.copyOfRange(signatureBytes, signatureBytes.length / 2, signatureBytes.length));
     
@@ -396,34 +408,6 @@ public class Egamal {
             return leftSide.equals(rightSide);
         }
     }
-
-    /* public boolean ElgamalVerification(String messageFilePath, String publicKeyPath) throws IOException, NoSuchAlgorithmException {
-        try (FileInputStream messageInputStream = new FileInputStream(messageFilePath);
-        FileInputStream signatureInputStream = new FileInputStream("verifiedMesage.txt")) {
-       
-            // Read the message from file and compute its hash
-            byte[] messageBytes = messageInputStream.readAllBytes();
-            BigInteger hashOfMessage = new BigInteger(RWHash(messageBytes));
-            
-            // Read the signature from the file
-            int aLength = signatureInputStream.read();
-            byte[] aBytes = new byte[aLength];
-            signatureInputStream.read(aBytes);
-            BigInteger a = new BigInteger(aBytes);
-            
-            int bLength = signatureInputStream.read();
-            byte[] bBytes = new byte[bLength];
-            signatureInputStream.read(bBytes);
-            BigInteger b = new BigInteger(bBytes);
-            
-            // Verify the signature
-            BigInteger leftSide = mod.FastExpo(g, hashOfMessage, p);
-            BigInteger rightSide = mod.FastExpo(y, a, p).multiply(mod.FastExpo(a, b, p)).mod(p);
-            
-            System.out.println(leftSide +" " +rightSide);
-            return leftSide.equals(rightSide);
-        }
-    }   */     
 
     public String toString() {
         return "u: " +u +", p: " +p +", g: " +g +", y: " +y;
