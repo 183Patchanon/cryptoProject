@@ -64,8 +64,11 @@ public class app {
                 String inputFilePath = sc.next();
                 sc.nextLine(); // newline character
                 System.out.print("PrivateKey path: ");
-                String privateKeyPath = sc.nextLine();
-                egm.ElgamalSignature(inputFilePath, privateKeyPath);
+                String privateKeyPath = sc.next();
+                sc.nextLine(); // newline character
+                System.out.print("Outputfile path: ");
+                String outputFilePath = sc.nextLine();
+                egm.ElgamalSignature(inputFilePath, privateKeyPath, outputFilePath);
                 // egm.ElgamalSignature("ascii.txt", "ElgamalSecretKey.txt");
             }
             else if (mode == 5) {
@@ -74,8 +77,11 @@ public class app {
                 String signedMessagePath = sc.next();
                 sc.nextLine(); // newline character
                 System.out.print("PublicKey path: ");
-                String publicKeyPath = sc.nextLine();
-                System.out.println(egm.ElgamalVerification(signedMessagePath, publicKeyPath));
+                String publicKeyPath = sc.next();
+                sc.nextLine(); // newline character
+                System.out.print("Outputfile path: ");
+                String outputFilePath = sc.nextLine();
+                System.out.println(egm.ElgamalVerification(signedMessagePath, publicKeyPath, outputFilePath));
                 // System.out.println(egm.ElgamalVerification("ascii.txt","ElgamalPublicKey.txt"));
             }
             else if (mode == 6) {

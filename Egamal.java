@@ -333,9 +333,9 @@ public class Egamal {
         return hashBytes;
     }
 
-    public void ElgamalSignature(String inputFilePath, String secretKeyPath) throws IOException, NoSuchAlgorithmException {
+    public void ElgamalSignature(String inputFilePath, String secretKeyPath, String fileoutputPath) throws IOException, NoSuchAlgorithmException {
         try (FileInputStream fileInputStream = new FileInputStream(inputFilePath);
-            FileOutputStream fileOutputStream = new FileOutputStream("signedMessage.txt")) {
+            FileOutputStream fileOutputStream = new FileOutputStream(fileoutputPath)) {
             BufferedReader br = new BufferedReader(new FileReader(secretKeyPath));
             u = new BigInteger(br.readLine().split(": ")[1].trim());
             p = new BigInteger(br.readLine().split(": ")[1].trim());
@@ -369,7 +369,7 @@ public class Egamal {
         }
     }
 
-    public boolean ElgamalVerification(String signedMessage, String publicKeyPath) throws IOException, NoSuchAlgorithmException {
+    public boolean ElgamalVerification(String signedMessage, String publicKeyPath, String fileoutputPath) throws IOException, NoSuchAlgorithmException {
         try (FileInputStream signedInputStream = new FileInputStream(signedMessage)) {
             // Read public key to get p, y
             BufferedReader br = new BufferedReader(new FileReader(publicKeyPath));
@@ -405,7 +405,15 @@ public class Egamal {
             BigInteger leftSide = mod.FastExpo(g, hashOfMessage, p);
             BigInteger rightSide = mod.FastExpo(y, a, p).multiply(mod.FastExpo(a, b, p)).mod(p);
     
-            return leftSide.equals(rightSide);
+            if (leftSide.equals(rightSide)) {
+                // If verification is successful, write the message (without the signature) to the specified output file
+                try (FileOutputStream fileOutputStream = new FileOutputStream(fileoutputPath)) {
+                    fileOutputStream.write(messageBytes);
+                }
+                return true; // Verification succeeded and file written
+            } else {
+                return false; // Verification failed
+            }
         }
     }
 
