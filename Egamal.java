@@ -9,10 +9,17 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class Egamal {
     private BigInteger u;
@@ -74,9 +81,11 @@ public class Egamal {
             printWriterPK.println("y: " + y.toString() +" ");
         }
     }
-    public void ElgamalEncrypt(String inputFilePath, String publicKeyPath) throws IOException {
+
+    // real
+    /* public void ElgamalEncrypt(String inputFilePath, String publicKeyPath, String outputFilePath) throws IOException {
         try (FileInputStream fileInputStream = new FileInputStream(inputFilePath);
-             FileOutputStream fileOutputStream = new FileOutputStream("CipherText.txt")) {
+             FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath)) {
             BufferedReader br = new BufferedReader(new FileReader(publicKeyPath));
             BigInteger p = new BigInteger(br.readLine().split(": ")[1].trim());
             BigInteger g = new BigInteger(br.readLine().split(": ")[1].trim());
@@ -107,88 +116,17 @@ public class Egamal {
 
                 fileOutputStream.write(bBytes.length);
                 fileOutputStream.write(bBytes);
-                System.out.println(aBytes.length +" " +bBytes.length);
+                // System.out.println(aBytes.length +" " +bBytes.length);
                 // System.out.println(character +" " +a +" " +b);
-            }
-        }
-    }
-
-    /* public void ElgamalEncrypt(String inputFilePath, String publicKeyPath) throws IOException {
-        try (FileInputStream fileInputStream = new FileInputStream(inputFilePath);
-        FileOutputStream fileOutputStream = new FileOutputStream("CipherText.txt");
-             BufferedReader br = new BufferedReader(new FileReader(publicKeyPath))) {
-            p = new BigInteger(br.readLine().split(": ")[1].trim());
-            g = new BigInteger(br.readLine().split(": ")[1].trim());
-            y = new BigInteger(br.readLine().split(": ")[1].trim());
-
-            int bytesRead;
-            int blockSize = (int) Math.ceil((double) (p.bitLength() - 1) / 8); // The block size is computed by dividing (p.bitLength() - 1) by 8 and rounding up
-            byte[] block = new byte[blockSize];
-
-            while ((bytesRead = fileInputStream.read(block)) != -1) {
-
-                // Encryption logic remains the same...
-                BigInteger k = new BigInteger(p.bitLength() - 1, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.ONE);
-                while (k.compareTo(p.subtract(BigInteger.ONE)) >= 0 || !gcd.GCD(k, p.subtract(BigInteger.ONE)).equals(BigInteger.ONE)) {
-                    k = new BigInteger(p.bitLength() - 1, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.ONE);
-                }
-                BigInteger a = mod.FastExpo(g, k, p); 
-                BigInteger b = mod.FastExpo(y, k, p).multiply(new BigInteger(1, block)).mod(p);
-
-                // byte[] aBytes = a.toByteArray();
-                // byte[] bBytes = b.toByteArray();
-                byte[] aBytes = adjustByteLength(a.toByteArray(), blockSize);
-                byte[] bBytes = adjustByteLength(b.toByteArray(), blockSize);
-
-                System.out.println(aBytes.length +" " +bBytes.length);
-                fileOutputStream.write(aBytes);
-                fileOutputStream.write(bBytes);
-            }
-        }
-    }
-
-    // pre-zero-padding
-    private byte[] adjustByteLength(byte[] original, int length) {
-        if (original.length < length) {
-            byte[] result = new byte[length];
-            System.arraycopy(original, 0, result, length - original.length, original.length);
-            return result;
-        }
-        return original;
-    }
-
-    public void ElgamalDecrypt(String inputFilePath, String secretKeyPath) throws IOException {
-        try (FileInputStream fileInputStream = new FileInputStream(inputFilePath);
-            FileOutputStream fileOutputStream = new FileOutputStream("plainText.txt");
-            BufferedReader br = new BufferedReader(new FileReader(secretKeyPath))) {
-            BigInteger u = new BigInteger(br.readLine().split(": ")[1].trim());
-            BigInteger p = new BigInteger(br.readLine().split(": ")[1].trim());
-
-            int blockSize = (int) Math.ceil((double) (p.bitLength() - 1) / 8);
-
-            while (fileInputStream.available() > 0) {
-                byte[] aBytes = new byte[blockSize];
-                fileInputStream.read(aBytes);
-                BigInteger a = new BigInteger(1, aBytes);
-
-                byte[] bBytes = new byte[blockSize];
-                fileInputStream.read(bBytes);
-                BigInteger b = new BigInteger(1, bBytes);
-
-                // Decrypt process...
-                BigInteger au = mod.FastExpo(a, u, p);
-                BigInteger inverseAu = gcd.findInverse(au, p);
-                BigInteger X = b.multiply(inverseAu).mod(p);
-
-                byte[] decryptedBlock = X.toByteArray();
-                fileOutputStream.write(decryptedBlock);
             }
         }
     } */
 
-    public void ElgamalDecrypt(String inputFilePath, String secretKeyPath) throws IOException {
+
+    // real
+    /* public void ElgamalDecrypt(String inputFilePath, String secretKeyPath, String outputFilePath) throws IOException {
         try (FileInputStream fileInputStream = new FileInputStream(inputFilePath);
-            FileOutputStream fileOutputStream = new FileOutputStream("plainText.txt")) {
+            FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath)) {
             BufferedReader br = new BufferedReader(new FileReader(secretKeyPath));
             u = new BigInteger(br.readLine().split(": ")[1].trim());
             p = new BigInteger(br.readLine().split(": ")[1].trim());
@@ -213,46 +151,119 @@ public class Egamal {
                 
                 // Compute b * inverse_au mod p
                 BigInteger X = b.multiply(inverseAu).mod(p); 
-                System.out.println(X);
-
-                fileOutputStream.write(X.intValue());
-            }
-        }
-    }
-
-    /* public void ElgamalDecrypt(String inputFilePath, String secretKeyPath) throws IOException {
-        try (FileInputStream fileInputStream = new FileInputStream(inputFilePath);
-             FileOutputStream fileOutputStream = new FileOutputStream("plainText.txt")) {
-            BufferedReader br = new BufferedReader(new FileReader(secretKeyPath));
-            BigInteger u = new BigInteger(br.readLine().split(": ")[1].trim());
-            BigInteger p = new BigInteger(br.readLine().split(": ")[1].trim());
-            BigInteger g = new BigInteger(br.readLine().split(": ")[1].trim());
-            BigInteger y = new BigInteger(br.readLine().split(": ")[1].trim());
-
-            int blockSize = (int) Math.ceil((double) (p.bitLength() - 1) / 8); // The block size is computed by dividing (p.bitLength() - 1) by 8 and rounding up
-            while (fileInputStream.available() > 0) {
-                byte[] aBytes = new byte[blockSize];
-                fileInputStream.read(aBytes);
-                BigInteger a = new BigInteger(aBytes);
-
-                byte[] bBytes = new byte[blockSize];
-                fileInputStream.read(bBytes);
-                BigInteger b = new BigInteger(bBytes);
-                
-                // Compute a^u mod p
-                BigInteger au = mod.FastExpo(a, u, p); 
-                
-                // Compute inverse of a^u mod p
-                BigInteger inverseAu = gcd.findInverse(au, p); 
-                
-                // Compute b * inverse_au mod p
-                BigInteger X = b.multiply(inverseAu).mod(p); 
-                // System.out.println(X);
+                // System.out.println(X)
 
                 fileOutputStream.write(X.intValue());
             }
         }
     } */
+
+    public void ElgamalEncrypt(String inputFilePath, String publicKeyPath, String outputFilePath) throws IOException {
+        try (BufferedReader br = new BufferedReader(new FileReader(publicKeyPath))) {
+            p = new BigInteger(br.readLine().split(": ")[1].trim());
+            g = new BigInteger(br.readLine().split(": ")[1].trim());
+            y = new BigInteger(br.readLine().split(": ")[1].trim());
+        }
+
+        // Reading and converting the plain text to blocks of BigInteger
+        Path path = Paths.get(inputFilePath);
+        byte[] data = Files.readAllBytes(path);
+        String bitsString = bytesToBitsBinary(data);
+        List<BigInteger> block = new ArrayList<>();
+        int blocksize = p.bitLength() - 1;
+
+        for (int i = 0; i < bitsString.length(); i += blocksize) {
+            int endIndex = Math.min(i + blocksize, bitsString.length());
+            String tmp = bitsString.substring(i, endIndex); // i - (i + blocksize)
+            if (tmp.length() != blocksize) {
+                tmp += "0".repeat(blocksize - tmp.length()); // post-padding with 0
+            }
+            block.add(new BigInteger(tmp, 2)); // create bigInt of every block
+        }
+
+        // Encrypting the blocks
+        List<Map<String, BigInteger>> cipher = encrypt(block);
+
+        // Writing the cipher to a file
+        try (FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath)) {
+            StringBuilder res = new StringBuilder();
+            blocksize = p.bitLength();
+
+            for (Map<String, BigInteger> tmp : cipher) {
+                String a = tmp.get("a").toString(2); //.get(key) -> return value
+                String b = tmp.get("b").toString(2);
+                res.append("0".repeat(blocksize - a.length())).append(a); // pre-padding with 0
+                res.append("0".repeat(blocksize - b.length())).append(b);
+            }
+
+            byte[] resBytes = bitsToBytes(res.toString());
+            fileOutputStream.write(resBytes);
+        }
+    }
+
+    private List<Map<String, BigInteger>> encrypt(List<BigInteger> plainText) {
+        List<Map<String, BigInteger>> cipher = new ArrayList<>();
+        for (BigInteger x : plainText) {
+            SecureRandom random = new SecureRandom();
+            BigInteger k = new BigInteger(p.bitLength(), random);
+            while (k.compareTo(p.subtract(BigInteger.ONE)) >= 0 || k.compareTo(BigInteger.TWO) < 0 || !(k.gcd(p.subtract(BigInteger.ONE)).equals(BigInteger.ONE))) {
+                k = new BigInteger(p.bitLength(), random);
+            }
+
+            BigInteger a = mod.FastExpo(g, k, p);
+            BigInteger b = (mod.FastExpo(y, k, p).multiply(x)).mod(p);
+            cipher.add(Map.of("a", a, "b", b));
+        }
+        return cipher;
+    }
+
+    public void ElgamalDecrypt(String inputFilePath, String secretKeyPath, String outputFilePath) throws IOException {   
+        try (FileInputStream fileInputStream = new FileInputStream(inputFilePath);
+             FileOutputStream fileOutputStream = new FileOutputStream(outputFilePath);
+             BufferedReader br = new BufferedReader(new FileReader(secretKeyPath))) {
+            u = new BigInteger(br.readLine().split(": ")[1].trim());
+            p = new BigInteger(br.readLine().split(": ")[1].trim());
+
+            // Read the cipher text
+            byte[] data = fileInputStream.readAllBytes();
+            String bitsString = bytesToBitsBinary(data);
+            List<Map<String, BigInteger>> cipher = new ArrayList<>();
+            int blocksize = p.bitLength();
+
+            // Process cipher text
+            for (int i = 0; i < bitsString.length(); i += 2 * blocksize) {
+                if (i + blocksize <= bitsString.length()) {
+                    // seperate a and b
+                    BigInteger a = new BigInteger(bitsString.substring(i, i + blocksize), 2);
+                    BigInteger b = new BigInteger(bitsString.substring(i + blocksize, Math.min(i + 2 * blocksize, bitsString.length())), 2);
+                    cipher.add(Map.of("a", a, "b", b));
+                }
+            }
+
+            // Decrypt the cipher text
+            List<BigInteger> plainText = new ArrayList<>();
+            for (Map<String, BigInteger> tmp : cipher) {
+                BigInteger a = tmp.get("a");
+                BigInteger au = mod.FastExpo(a, u, p);
+                BigInteger invAu = gcd.findInverse(au, p);
+
+                BigInteger b = tmp.get("b");
+
+                BigInteger decrypted = invAu.multiply(b).mod(p);
+                plainText.add(decrypted);
+            }
+            // Write the plain text to file
+            StringBuilder res = new StringBuilder();
+            int blocksizeBits = p.bitLength() - 1;
+            for (BigInteger tmp : plainText) {
+                String pt = tmp.toString(2);
+                res.append("0".repeat(Math.max(0, blocksizeBits - pt.length()))).append(pt); // pre-padding with 0
+            }
+
+            byte[] resBytes = bitsToBytes(res.toString());
+            fileOutputStream.write(resBytes);
+        }
+    }
 
     public byte[] getRWHash(byte[] message, String pPath) throws FileNotFoundException, IOException, NoSuchAlgorithmException {
         BufferedReader br = new BufferedReader(new FileReader(pPath));
@@ -262,11 +273,8 @@ public class Egamal {
         return hash;
     }
 
-
     private byte[] RWHash(byte[] message) throws NoSuchAlgorithmException, FileNotFoundException, IOException {
-        // p = new BigInteger("2147483783");
-        // s = output size = log2(p)
-        // System.out.println(p);
+
         int outputSize = (int) (Math.log(p.doubleValue()) / Math.log(2));
 
         // Compression block size: 5 * s
@@ -282,7 +290,7 @@ public class Egamal {
         BigInteger previousHash = BigInteger.valueOf(message.length).mod(p);
 
         // Calculate the number of iterations required based on the length of the paddedMessage
-        int iterations = (int) Math.ceil((double) paddedMessage.length() / compressionBlockSize);
+        int iterations = (int) paddedMessage.length() / compressionBlockSize;
 
         // do H0 - H4
         // BigInteger startIndex = BigInteger.ZERO;
@@ -304,7 +312,7 @@ public class Egamal {
                     chunks[j] = paddedMessage.substring(startIndex, startIndex + outputSize);
                     startIndex += outputSize;
                 }
-                System.out.println("chunk" +i +" " +j +": " +chunks[j]);
+                // System.out.println("chunk" +i +" " +j +": " +chunks[j]);
             }
 
             // Compute sumCi
@@ -315,7 +323,7 @@ public class Egamal {
                     sumCi = sumCi.add(chunkValue.pow(j + 1)); // ^1, 2, 3, 4, 5
                 }
             }
-            System.out.println("sumCi " +sumCi);
+            // System.out.println("sumCi " +sumCi);
             BigInteger hashValue = previousHash.add(sumCi).shiftRight(16).mod(p);
 
             previousHash = hashValue;
@@ -335,7 +343,7 @@ public class Egamal {
 
     public void ElgamalSignature(String inputFilePath, String secretKeyPath, String fileoutputPath) throws IOException, NoSuchAlgorithmException {
         try (FileInputStream fileInputStream = new FileInputStream(inputFilePath);
-            FileOutputStream fileOutputStream = new FileOutputStream(fileoutputPath)) {
+             FileOutputStream fileOutputStream = new FileOutputStream(fileoutputPath)) {
             BufferedReader br = new BufferedReader(new FileReader(secretKeyPath));
             u = new BigInteger(br.readLine().split(": ")[1].trim());
             p = new BigInteger(br.readLine().split(": ")[1].trim());
@@ -343,35 +351,35 @@ public class Egamal {
             y = new BigInteger(br.readLine().split(": ")[1].trim());
             br.close();
             byte[] messageBytes = fileInputStream.readAllBytes();
+
+            BigInteger hashOfMessage = new BigInteger(RWHash(messageBytes)); // Assuming RWHash function is defined elsewhere
             
-            BigInteger hashOfMessage = new BigInteger(RWHash(messageBytes));
-            
+            SecureRandom secureRandom = new SecureRandom(); // Ensure secureRandom is initialized properly
             BigInteger k = new BigInteger(p.bitLength() - 2, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.TWO);
-            while (!gcd.GCD(k, p.subtract(BigInteger.ONE)).equals(BigInteger.ONE)) {
+            while (!gcd.GCD(k, p.subtract(BigInteger.ONE)).equals(BigInteger.ONE)) { // Assuming GCD function is defined elsewhere
                 k = new BigInteger(p.bitLength() - 2, secureRandom).mod(p.subtract(BigInteger.TWO)).add(BigInteger.TWO);
             }
             
-            BigInteger a = mod.FastExpo(g, k, p);
-            BigInteger kInverse = gcd.findInverse(k, p.subtract(BigInteger.ONE));
-            BigInteger b = kInverse.multiply(hashOfMessage.subtract(u.multiply(a))).mod(p.subtract(BigInteger.ONE));
+            BigInteger r = mod.FastExpo(g, k, p); // Assuming FastExpo function is defined elsewhere
+            BigInteger kInverse = gcd.findInverse(k, p.subtract(BigInteger.ONE)); // Assuming findInverse function is defined elsewhere
+            BigInteger s = kInverse.multiply(hashOfMessage.subtract(u.multiply(r))).mod(p.subtract(BigInteger.ONE));
             
-            // Convert signature to byte array and write to the file
-            byte[] aBytes = a.toByteArray();
-            byte[] bBytes = b.toByteArray();
-            String delimiter = "<<signedContent>>"; // Define a clear delimiter
-            byte[] delimiterBytes = delimiter.getBytes();
-            
-            // Write message, delimiter, and signature to the file
+            // Convert signature to byte array
+            byte[] rBytes = r.toByteArray();
+            byte[] sBytes = s.toByteArray();
+
             fileOutputStream.write(messageBytes);
-            fileOutputStream.write(delimiterBytes); // Write delimiter to separate message from signature
-            fileOutputStream.write(aBytes);
-            fileOutputStream.write(bBytes);
+            fileOutputStream.write(rBytes);
+            fileOutputStream.write(sBytes);
+
+            fileOutputStream.write(rBytes.length);
+            fileOutputStream.write(sBytes.length);
         }
     }
 
     public boolean ElgamalVerification(String signedMessage, String publicKeyPath, String fileoutputPath) throws IOException, NoSuchAlgorithmException {
         try (FileInputStream signedInputStream = new FileInputStream(signedMessage)) {
-            // Read public key to get p, y
+            // Read public key to get p, g, y
             BufferedReader br = new BufferedReader(new FileReader(publicKeyPath));
             p = new BigInteger(br.readLine().split(": ")[1].trim());
             g = new BigInteger(br.readLine().split(": ")[1].trim()); 
@@ -379,32 +387,29 @@ public class Egamal {
             br.close();
 
             byte[] signedContent = signedInputStream.readAllBytes();
-            // Convert the signedContent to a String to use the delimiter
-            String contentString = new String(signedContent);
-            String delimiter = "<<signedContent>>";
-            // Split the content using the delimiter to separate the message from the signature
-            String[] parts = contentString.split(delimiter, 2); // Limit to 2 parts, ensuring only the first occurrence is used
-    
-            if (parts.length < 2) {
-                // If there are not enough parts, the format is incorrect
-                return false;
-            }
-    
-            byte[] messageBytes = parts[0].getBytes();
-            byte[] signatureBytes = parts[1].getBytes();
-    
+            
+            // Assuming the last two bytes indicate the lengths of a and b
+            int rLength = signedContent[signedContent.length - 2] & 0xFF; // Convert to unsigned (only positive number)
+            int sLength = signedContent[signedContent.length - 1] & 0xFF; // Convert to unsigned
+
+            // Calculate where the message ends and the signature begins
+            int messageLength = signedContent.length - rLength - sLength - 2;
+            
+            byte[] messageBytes = Arrays.copyOfRange(signedContent, 0, messageLength);
+            byte[] rBytes = Arrays.copyOfRange(signedContent, messageLength, messageLength + rLength);
+            byte[] sBytes = Arrays.copyOfRange(signedContent, messageLength + sLength, messageLength + rLength + sLength);
+            
             // Hash the message
             BigInteger hashOfMessage = new BigInteger(RWHash(messageBytes));
-    
-            // Assuming the format of the signature is known and consistent
+            
             // Extract a and b from the signature
-            BigInteger a = new BigInteger(1, Arrays.copyOfRange(signatureBytes, 0, signatureBytes.length / 2));
-            BigInteger b = new BigInteger(1, Arrays.copyOfRange(signatureBytes, signatureBytes.length / 2, signatureBytes.length));
-    
+            BigInteger r = new BigInteger(rBytes);
+            BigInteger s = new BigInteger(sBytes);
+            
             // Verify the signature
             BigInteger leftSide = mod.FastExpo(g, hashOfMessage, p);
-            BigInteger rightSide = mod.FastExpo(y, a, p).multiply(mod.FastExpo(a, b, p)).mod(p);
-    
+            BigInteger rightSide = mod.FastExpo(y, r, p).multiply(mod.FastExpo(r, s, p)).mod(p);
+            
             if (leftSide.equals(rightSide)) {
                 // If verification is successful, write the message (without the signature) to the specified output file
                 try (FileOutputStream fileOutputStream = new FileOutputStream(fileoutputPath)) {
@@ -419,5 +424,32 @@ public class Egamal {
 
     public String toString() {
         return "u: " +u +", p: " +p +", g: " +g +", y: " +y;
+    }
+
+    public static String bytesToBitsBinary(byte[] byteData) {
+        StringBuilder bitsData = new StringBuilder();
+        for (byte b : byteData) {
+            bitsData.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+        }
+        return bitsData.toString();
+    }
+
+    public static byte[] bitsToBytes(String bitString) {
+        if (bitString.length() % 8 != 0) {
+            bitString = bitString + "0".repeat(8 - (bitString.length() % 8)); // post-padding with 0
+        }
+        List<Byte> byteValues = new ArrayList<>();
+        for (int i = 0; i < bitString.length(); i += 8) {
+            String chunk = bitString.substring(i, Math.min(i + 8, bitString.length()));
+            byteValues.add((byte) Integer.parseInt(chunk, 2));
+        }
+        while (byteValues.get(byteValues.size() - 1) == 0) {
+            byteValues.remove(byteValues.size() - 1);
+        }
+        byte[] byteArray = new byte[byteValues.size()];
+        for (int i = 0; i < byteValues.size(); i++) {
+            byteArray[i] = byteValues.get(i);
+        }
+        return byteArray;
     }
 }
