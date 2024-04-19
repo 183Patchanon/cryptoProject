@@ -44,8 +44,11 @@ public class app {
                 String inputFilePath = sc.next();
                 sc.nextLine(); // newline character
                 System.out.print("PublicKey path: ");
-                String publicKeyPath = sc.nextLine();
-                egm.ElgamalEncrypt(inputFilePath, publicKeyPath);
+                String publicKeyPath = sc.next();
+                System.out.print("OutputFile path: ");
+                String outputFilePath = sc.next();
+                sc.nextLine(); // newline character
+                egm.ElgamalEncrypt(inputFilePath, publicKeyPath, outputFilePath);
                 // egm.ElgamalEncrypt("ascii.txt", "ElgamalPublicKey.txt");
             }
             else if (mode == 3) {
@@ -54,8 +57,12 @@ public class app {
                 String inputFilePath = sc.next();
                 sc.nextLine(); // newline character
                 System.out.print("PrivateKey path: ");
-                String privateKeyPath = sc.nextLine();
-                egm.ElgamalDecrypt(inputFilePath, privateKeyPath);
+                String privateKeyPath = sc.next();
+                sc.nextLine(); // newline character
+                System.out.print("OutputFile path: ");
+                String outputFilePath = sc.next();
+                sc.nextLine(); // newline character
+                egm.ElgamalDecrypt(inputFilePath, privateKeyPath, outputFilePath);
                 // egm.ElgamalDecrypt("cipherText.txt", "ElgamalSecretKey.txt");
             }
             else if (mode == 4) {
